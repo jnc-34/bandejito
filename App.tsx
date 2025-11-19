@@ -93,11 +93,11 @@ const App: React.FC = () => {
           <div className="w-full flex flex-col items-center gap-6">
             <FileUploader 
               onFileSelected={processFile} 
-              isProcessing={status !== ProcessStatus.IDLE && status !== ProcessStatus.ERROR} 
+              isProcessing={status !== ProcessStatus.IDLE} 
             />
             
             {/* Progress Indicators */}
-            {status !== ProcessStatus.IDLE && status !== ProcessStatus.ERROR && (
+            {status !== ProcessStatus.IDLE && (
                 <div className="w-full max-w-md space-y-2">
                     <div className="flex justify-between text-xs font-medium text-slate-500 uppercase tracking-wide">
                         <span>Progreso</span>
