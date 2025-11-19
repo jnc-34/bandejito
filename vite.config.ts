@@ -9,8 +9,8 @@ export default defineConfig(({ mode }) => {
   
   return {
     plugins: [react()],
-    // IMPORTANTE: Reemplaza 'dta' con el nombre exacto de tu repositorio en GitHub
-    base: '/dta/', 
+    // Se utiliza './' para que los assets sean relativos y funcionen en cualquier ruta de despliegue
+    base: './', 
     define: {
       // Esto permite usar process.env.API_KEY de manera segura durante el build
       // Si la variable no existe, se asigna una cadena vacía para evitar errores de compilación,
