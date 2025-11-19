@@ -1,0 +1,5 @@
+{
+  "name": "Bandejito",
+  "description": "Sistema inteligente de distribución de expedientes y tareas basado en reglas configurables y extracción de datos mediante IA.",
+  "requestFramePermissions": []
+}
