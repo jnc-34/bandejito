@@ -5,12 +5,13 @@ import { extraerDatosDePDF, fileToBase64 } from './services/geminiService';
 import { distribuirExpedientes } from './utils/distributor';
 import { CONFIGURACION_DISTRIBUCION } from './config/logicConfig';
 import { Asignacion, ProcessStatus } from './types';
-import { Bot, ShieldCheck, LayoutDashboard } from 'lucide-react';
+import { Bot, ShieldCheck, LayoutDashboard, Settings, X, Lock } from 'lucide-react';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<ProcessStatus>(ProcessStatus.IDLE);
   const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showRules, setShowRules] = useState(false);
 
   const processFile = async (file: File) => {
     try {
@@ -52,7 +53,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col relative">
       {/* Header */}
       <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -62,15 +63,19 @@ const App: React.FC = () => {
             </div>
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">Bandejito</h1>
           </div>
-          <div className="flex items-center gap-4 text-sm text-slate-500">
-            <div className="flex items-center gap-1" title="La API Key se maneja de forma segura mediante variables de entorno">
+          <div className="flex items-center gap-2 sm:gap-4 text-sm text-slate-500">
+            <div className="flex items-center gap-1 hidden sm:flex" title="La API Key se maneja de forma segura mediante variables de entorno">
                 <ShieldCheck className="w-4 h-4 text-emerald-500" />
                 <span className="hidden sm:inline">Seguridad Activa</span>
             </div>
-            <div className="flex items-center gap-1">
-                <Bot className="w-4 h-4 text-indigo-500" />
-                <span className="hidden sm:inline">Powered by Gemini 2.5</span>
-            </div>
+            <button 
+              onClick={() => setShowRules(true)}
+              className="flex items-center gap-1 hover:bg-slate-100 px-2 py-1 rounded-md transition-colors"
+              title="Ver reglas configuradas"
+            >
+                <Settings className="w-4 h-4 text-slate-600" />
+                <span className="hidden sm:inline">Reglas</span>
+            </button>
           </div>
         </div>
       </header>
@@ -83,7 +88,7 @@ const App: React.FC = () => {
           <div className="text-center mb-10 max-w-xl animate-fade-in">
             <h2 className="text-3xl font-bold text-slate-900 mb-4">Distribución Automática de Expedientes</h2>
             <p className="text-slate-600">
-              Sube tu listado en PDF. La IA extraerá los números de expediente y asignará automáticamente el responsable según las reglas configuradas.
+              Sube tu listado en PDF. La IA extraerá los números de expediente y asignará automáticamente el responsable según las reglas configuradas en <code>reglas.json</code>.
             </p>
           </div>
         )}
@@ -145,9 +150,62 @@ const App: React.FC = () => {
 
       </main>
       
+      {/* Rules Modal */}
+      {showRules && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-fade-in-up">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+              <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                <Settings className="w-5 h-5 text-indigo-500" />
+                Configuración Actual
+              </h3>
+              <button onClick={() => setShowRules(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                 <div className="flex items-start gap-3">
+                   <Lock className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+                   <div>
+                     <h4 className="font-semibold text-amber-800 text-sm">Seguridad de API Key</h4>
+                     <p className="text-sm text-amber-700 mt-1">
+                       Esta aplicación se ejecuta en el navegador. Para evitar el uso no autorizado de tu API Key:
+                     </p>
+                     <ul className="list-disc list-inside text-sm text-amber-700 mt-2 space-y-1">
+                       <li>Ve a <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="underline font-medium">Google Cloud Console &gt; Credenciales</a>.</li>
+                       <li>Edita tu API Key y selecciona <strong>"Restricciones de sitio web"</strong>.</li>
+                       <li>Añade tu dominio de GitHub Pages (ej. <code>https://usuario.github.io/*</code>).</li>
+                       <li>Configura <strong>Cuotas</strong> para limitar el gasto máximo mensual.</li>
+                     </ul>
+                   </div>
+                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-slate-600">Reglas cargadas desde <code>config/reglas.json</code>:</p>
+                <div className="bg-slate-800 rounded-lg p-4 text-xs font-mono text-indigo-100 overflow-auto max-h-64 shadow-inner">
+                  <pre>{JSON.stringify(CONFIGURACION_DISTRIBUCION, null, 2)}</pre>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 text-right">
+              <button 
+                onClick={() => setShowRules(false)}
+                className="px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
       <footer className="py-6 text-center text-slate-400 text-sm border-t border-slate-100">
-        <p>Bandejito v1.0 &copy; {new Date().getFullYear()}</p>
+        <p>Bandejito v1.0 &copy; {new Date().getFullYear()} | Powered by Gemini 2.5</p>
       </footer>
     </div>
   );
