@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { UploadCloud, FileText, Loader2 } from 'lucide-react';
+import { UploadCloud, Loader2 } from 'lucide-react';
 
 interface FileUploaderProps {
   onFileSelected: (file: File) => void;
