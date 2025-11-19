@@ -13,22 +13,16 @@ export const extraerDatosDePDF = async (base64File: string, mimeType: string = '
     const model = 'gemini-2.5-flash'; // Modelo eficiente para tareas de extracción
     
     const prompt = `
-      Analiza el siguiente documento PDF (listado administrativo).
+      ANÁLISIS PDF: Ignora texto, solo procesa datos tabulados de 6 columnas.
       
-      OBJETIVO DE PRIVACIDAD:
-      - IGNORA completamente nombres de personas, direcciones, DNI o cualquier dato personal sensible.
-      - Solo nos interesa la estructura administrativa de los expedientes.
+      OBJETIVO DE PRIVACIDAD: 
+      IGNORA COMPLETAMENTE nombres, direcciones, datos personales sensibles y TODAS las columnas excepto "año" y "numero".
 
-      TAREA DE EXTRACCIÓN:
-      1. Localiza filas que contengan un "número" de expediente y un "año".
-      2. Extrae SOLO:
-         - "numero": Limpia cualquier texto extra (ej: "Exp 123" -> "123").
-         - "anio": El año asociado.
-      3. Si el año está abreviado (ej: "24"), asume siglo XXI (2024).
-      4. Ignora filas que sean encabezados de tabla o totales.
-      
-      FORMATO DE SALIDA:
-      Devuelve un JSON Array limpio con objetos { "numero": string, "anio": string }.
+      TAREA DE EXTRACCIÓN: 
+      Por cada fila, extrae SOLO los valores de las columnas "año" y "numero".
+
+      SALIDA: 
+      Devuelve un JSON Array limpio de objetos {"numero": string, "anio": string}.
     `;
 
     const response = await ai.models.generateContent({
