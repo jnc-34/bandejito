@@ -5,7 +5,7 @@ import { extraerDatosDePDF, fileToBase64 } from './services/geminiService';
 import { distribuirExpedientes } from './utils/distributor';
 import { CONFIGURACION_DISTRIBUCION } from './config/logicConfig';
 import { Asignacion, ProcessStatus } from './types';
-import { Bot, ShieldCheck, LayoutDashboard } from 'lucide-react';
+import { Bot, ShieldCheck } from 'lucide-react';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<ProcessStatus>(ProcessStatus.IDLE);
@@ -56,10 +56,18 @@ const App: React.FC = () => {
       {/* Header */}
       <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-indigo-600 p-2 rounded-lg">
-                <LayoutDashboard className="w-5 h-5 text-white" />
-            </div>
+          <div className="flex items-center gap-3">
+            {/* LOGO: Reemplaza '/logo.png' con el nombre de tu archivo en la carpeta public */}
+            <img 
+              src="/logo.png" 
+              alt="Bandejito Logo" 
+              className="h-10 w-auto object-contain"
+              onError={(e) => {
+                // Fallback si no encuentran la imagen: muestra texto estilizado
+                e.currentTarget.style.display = 'none';
+              }} 
+            />
+            {/* Fallback visual si no hay logo, o titulo complementario */}
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">Bandejito</h1>
           </div>
           <div className="flex items-center gap-2 sm:gap-4 text-sm text-slate-500">
