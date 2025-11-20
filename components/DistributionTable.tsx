@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Asignacion } from '../types';
-import { Download, UserCheck, AlertCircle, Filter, Briefcase } from 'lucide-react';
+import { Download, UserCheck, AlertCircle, Filter, Briefcase, Users } from 'lucide-react';
 
 interface DistributionTableProps {
   data: Asignacion[];
@@ -23,26 +23,43 @@ export const DistributionTable: React.FC<DistributionTableProps> = ({ data, onRe
     }, {} as Record<string, number>);
   }, [data]);
 
-  // 3. Filtrar y Ordenar datos
-  // Se ordenan primero por Responsable (agrupamiento implícito) y luego por número de expediente
-  const filteredAndSortedData = useMemo(() => {
-    let result = filter === 'TODOS' 
-      ? [...data] 
+  // 3. Agrupamiento de datos para la vista
+  const groupedData = useMemo(() => {
+    const groups: Record<string, Asignacion[]> = {};
+    
+    // Filtramos primero si hay selección
+    const dataToGroup = filter === 'TODOS' 
+      ? data 
       : data.filter(d => d.responsable === filter);
 
-    return result.sort((a, b) => {
-      // Primer criterio: Responsable alfabéticamente
-      const respCompare = a.responsable.localeCompare(b.responsable);
-      if (respCompare !== 0) return respCompare;
-      
-      // Segundo criterio: Expediente
-      return a.fullString.localeCompare(b.fullString);
+    // Ordenamos los datos base por número de expediente para que queden ordenados dentro del grupo
+    const sortedData = [...dataToGroup].sort((a, b) => a.fullString.localeCompare(b.fullString));
+
+    // Agrupamos
+    sortedData.forEach(item => {
+      if (!groups[item.responsable]) {
+        groups[item.responsable] = [];
+      }
+      groups[item.responsable].push(item);
     });
+
+    return groups;
   }, [data, filter]);
 
+  // Obtener las llaves de grupo ordenadas alfabéticamente
+  const sortedGroupKeys = Object.keys(groupedData).sort();
+
   const downloadCSV = () => {
+    // Filtrar y ordenar para el CSV (similar a la vista)
+    let dataExport = filter === 'TODOS' ? [...data] : data.filter(d => d.responsable === filter);
+    dataExport.sort((a, b) => {
+       const respCompare = a.responsable.localeCompare(b.responsable);
+       if (respCompare !== 0) return respCompare;
+       return a.fullString.localeCompare(b.fullString);
+    });
+
     const headers = ["Expediente", "Numero", "Año", "Responsable"];
-    const rows = filteredAndSortedData.map(row => 
+    const rows = dataExport.map(row => 
       [`"${row.fullString}"`, `"${row.numero}"`, `"${row.anio}"`, `"${row.responsable}"`].join(',')
     );
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
@@ -58,7 +75,7 @@ export const DistributionTable: React.FC<DistributionTableProps> = ({ data, onRe
   return (
     <div className="w-full max-w-5xl mx-auto mt-8 animate-fade-in-up pb-20">
       
-      {/* Header Stats */}
+      {/* Header Stats - Conteo por responsable */}
       <div className="mb-8">
         <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4">
           <UserCheck className="w-6 h-6 text-emerald-600" />
@@ -124,39 +141,59 @@ export const DistributionTable: React.FC<DistributionTableProps> = ({ data, onRe
         </div>
       </div>
 
-      {/* Data Table */}
+      {/* Data Table Agrupada */}
       <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-slate-600 uppercase tracking-wider font-semibold">
               <tr>
-                <th className="px-6 py-4 border-b w-1/2">Expediente</th>
-                <th className="px-6 py-4 border-b w-1/2">Responsable Asignado</th>
+                <th className="px-6 py-4 border-b">Expediente</th>
+                {/* La columna 'Responsable' es redundante con el agrupamiento, pero la dejamos implícita en el header de grupo */}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredAndSortedData.map((item, index) => (
-                <tr key={index} className="hover:bg-indigo-50/30 transition-colors group">
-                  <td className="px-6 py-3 font-medium text-slate-900 group-hover:text-indigo-700 transition-colors">
-                    {item.fullString}
-                  </td>
-                  <td className="px-6 py-3">
-                    <span className={`
-                      inline-flex items-center px-3 py-1 rounded-full text-xs font-bold shadow-sm
-                      ${item.responsable === 'SIN_ASIGNAR' || item.responsable === 'ERROR_DATO'
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-indigo-100 text-indigo-800'}
-                    `}>
-                      {item.responsable === 'SIN_ASIGNAR' && <AlertCircle className="w-3 h-3 mr-1"/>}
-                      {item.responsable}
-                    </span>
-                  </td>
-                </tr>
+              {sortedGroupKeys.map(responsable => (
+                <React.Fragment key={responsable}>
+                  {/* Group Header Row */}
+                  <tr className="bg-slate-100/80">
+                    <td className="px-6 py-2 border-t border-b border-slate-200">
+                      <div className="flex items-center gap-2">
+                        <span className={`
+                          inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold
+                          ${responsable === 'SIN_ASIGNAR' || responsable === 'ERROR_DATO'
+                             ? 'bg-red-200 text-red-800' 
+                             : 'bg-indigo-200 text-indigo-800'}
+                        `}>
+                            <Users className="w-3 h-3" />
+                        </span>
+                        <span className="font-bold text-slate-700">{responsable}</span>
+                        <span className="text-xs font-normal text-slate-500 ml-1">
+                          ({groupedData[responsable].length} expedientes)
+                        </span>
+                        {responsable === 'SIN_ASIGNAR' && (
+                            <span className="text-xs text-red-600 flex items-center gap-1 ml-2">
+                                <AlertCircle className="w-3 h-3" /> Revisar
+                            </span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                  
+                  {/* Data Rows for this Group */}
+                  {groupedData[responsable].map((item, index) => (
+                    <tr key={`${responsable}-${item.fullString}-${index}`} className="hover:bg-indigo-50/30 transition-colors group">
+                      <td className="px-6 py-3 pl-12 font-medium text-slate-900 group-hover:text-indigo-700 transition-colors">
+                        {item.fullString}
+                      </td>
+                    </tr>
+                  ))}
+                </React.Fragment>
               ))}
-              {filteredAndSortedData.length === 0 && (
+              
+              {data.length === 0 && (
                   <tr>
-                      <td colSpan={2} className="text-center py-8 text-slate-500">
-                          No hay expedientes para este filtro.
+                      <td className="text-center py-8 text-slate-500">
+                          No hay datos para mostrar.
                       </td>
                   </tr>
               )}
