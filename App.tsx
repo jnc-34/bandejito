@@ -57,13 +57,13 @@ const App: React.FC = () => {
       <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {/* LOGO: Reemplaza '/logo.png' con el nombre de tu archivo en la carpeta public */}
+            {/* LOGO: Usamos ruta relativa 'logo.png' para compatibilidad con subdirectorios en deploy */}
             <img 
-              src="/logo.png" 
+              src="logo.png" 
               alt="Bandejito Logo" 
               className="h-10 w-auto object-contain"
               onError={(e) => {
-                // Fallback si no encuentran la imagen: muestra texto estilizado
+                // Fallback si no encuentran la imagen: se oculta y queda solo el texto
                 e.currentTarget.style.display = 'none';
               }} 
             />
