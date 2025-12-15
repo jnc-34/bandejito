@@ -1,16 +1,31 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 import { Expediente } from "../types";
 
 // Inicializamos el cliente.
-// SEGURIDAD: Al estar en el cliente (navegador), esta API KEY es visible en la red.
-// ESTRATEGIA DE DEFENSA:
-// 1. Restricciones HTTP en Google Cloud Console (filtra navegadores no autorizados).
-// 2. CUOTAS Y PRESUPUESTOS (evita sorpresas de facturación si hay spoofing).
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+/**
+ * Función auxiliar para reintentar operaciones automáticamente cuando la API está saturada.
+ * Implementa "Exponential Backoff": espera 1s, luego 2s, luego 4s.
+ */
+async function retryOperation<T>(operation: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
+  try {
+    return await operation();
+  } catch (error: any) {
+    const errorMsg = error.toString();
+    // Detectar errores de sobrecarga (503) o problemas temporales de servidor
+    if ((errorMsg.includes("503") || errorMsg.includes("overloaded") || errorMsg.includes("UNAVAILABLE")) && retries > 0) {
+      console.warn(`Gemini sobrecargado. Reintentando en ${delay/1000} segundos... Quedan ${retries} intentos.`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return retryOperation(operation, retries - 1, delay * 2);
+    }
+    throw error;
+  }
+}
 
 export const extraerDatosDePDF = async (base64File: string, mimeType: string = 'application/pdf'): Promise<Expediente[]> => {
   try {
-    const model = 'gemini-2.5-flash'; // Modelo eficiente para tareas de extracción
+    const model = 'gemini-2.5-flash'; 
     
     const prompt = `
       ANÁLISIS PDF: Ignora texto, solo procesa datos tabulados de 6 columnas.
@@ -25,7 +40,8 @@ export const extraerDatosDePDF = async (base64File: string, mimeType: string = '
       Devuelve un JSON Array limpio de objetos {"numero": string, "anio": string}.
     `;
 
-    const response = await ai.models.generateContent({
+    // Envolvemos la llamada en la función de reintento
+    const response = await retryOperation<GenerateContentResponse>(() => ai.models.generateContent({
       model: model,
       contents: {
         parts: [
@@ -54,7 +70,7 @@ export const extraerDatosDePDF = async (base64File: string, mimeType: string = '
           }
         }
       }
-    });
+    }));
 
     const jsonText = response.text;
     if (!jsonText) {
@@ -73,19 +89,18 @@ export const extraerDatosDePDF = async (base64File: string, mimeType: string = '
   } catch (error: any) {
     console.error("Error en Gemini Service:", error);
     
-    // Manejo de errores específicos de la API
     const errorMsg = error.toString();
     
     if (errorMsg.includes("403") || errorMsg.includes("PERMISSION_DENIED")) {
-      throw new Error("Acceso denegado (403). Verifica que la 'API Key' tenga restricciones HTTP correctas para este dominio o que no haya expirado.");
+      throw new Error("Acceso denegado (403). Verifica tu API Key.");
     }
     
     if (errorMsg.includes("429") || errorMsg.includes("RESOURCE_EXHAUSTED")) {
-      throw new Error("Límite de cuota excedido (429). Se han realizado demasiadas peticiones hoy. Intenta más tarde.");
+      throw new Error("Has superado tu cuota de uso diaria de la IA.");
     }
 
-    if (errorMsg.includes("500") || errorMsg.includes("503")) {
-      throw new Error("Error en los servidores de Google (5xx). Por favor intenta de nuevo en unos segundos.");
+    if (errorMsg.includes("503") || errorMsg.includes("overloaded")) {
+      throw new Error("Los servidores de Google están muy ocupados en este momento. Por favor, intenta de nuevo en 1 minuto.");
     }
 
     throw error;
@@ -98,7 +113,6 @@ export const fileToBase64 = (file: File): Promise<string> => {
     reader.readAsDataURL(file);
     reader.onload = () => {
       if (typeof reader.result === 'string') {
-        // Remover el prefijo "data:application/pdf;base64,"
         const base64 = reader.result.split(',')[1];
         resolve(base64);
       } else {
