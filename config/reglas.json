@@ -8,15 +8,16 @@
     "FRANCISCO",
     "LUCIANA",
     "JUAN",
-    "DAMIANA"
+    "DAMIANA",
+    "NAHUEL"
   ],
   "reglas": {
     "dosDigitos": {
-      "00": "MARISA",
-      "10": "MARISA",
-      "20": "MARISA",
-      "30": "MARISA",
-      "40": "MARISA",
+      "00": "NAHUEL",
+      "10": "NAHUEL",
+      "20": "NAHUEL",
+      "30": "NAHUEL",
+      "40": "NAHUEL",
       "50": "SUSANA",
       "60": "SUSANA",
       "70": "SUSANA",
@@ -35,9 +36,9 @@
     },
     "unDigito": {
       "1": "CATERINA",
-      "2": "ROMINA",
+      "2": "DAMIANA",
       "3": "CLARISA",
-      "4": "MARISA",
+      "4": "NAHUEL",
       "5": "SUSANA",
       "6": "FRANCISCO",
       "7": "LUCIANA",
