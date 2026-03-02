@@ -9,6 +9,7 @@
     "LUCIANA",
     "JUAN",
     "DAMIANA",
+    "ANTONELLA",
     "NAHUEL"
   ],
   "reglas": {
@@ -43,6 +44,13 @@
       "6": "FRANCISCO",
       "7": "LUCIANA",
       "9": "JUAN"
+    },
+    "reglasEspeciales": {
+      "beneficios": {
+        "habilitado": true,
+        "modo": "responsable_unico",
+        "responsable": "ANTONELLA"
+      }
     }
   }
 }
